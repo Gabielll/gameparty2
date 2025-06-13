@@ -45,45 +45,46 @@ const GameBoard = (props) => { // Accept props
 
   // Effect for cloning models and setting up players
   useEffect(() => {
-    if (scene && loadedAnimalModels.length > 0 && playerMeshes.length === 0) { // Only run if models are loaded and player meshes not yet created
-      const newPlayerMeshes = [];
-      const initialBoardSpacePos = boardSpacePositions[0];
+    if (scene && loadedAnimalModels.length > 0 && playerMeshes.length === 0) {
+      console.log("Creating player clones from loadedAnimalModels:", loadedAnimalModels.map(m=>m.name));
+      const tempPlayerMeshes = []; // Use a temporary array before setting state
+      const initialBoardSpacePos = boardSpacePositions[0]; // Still needed for eventual correct positioning
 
       for (let i = 0; i < Math.min(loadedAnimalModels.length, 4); i++) {
         const originalModel = loadedAnimalModels[i];
         if (originalModel) {
-          // Ensure existing player meshes are disposed if this effect were to re-run for some reason
           const existingPlayerMesh = scene.getMeshByName("player" + i);
           if (existingPlayerMesh) {
             existingPlayerMesh.dispose();
           }
 
-          const playerClone = originalModel.clone("player" + i, null, true); // Clone including children
+          const playerClone = originalModel.clone("player" + i, null, true);
           if (playerClone) {
+            console.log("Attempting to make visible and position clone:", playerClone.name);
+
+            // Temporary Debugging for Visibility:
+            playerClone.position = new Vector3(i * 2, 1, 0); // Spread them out on X near origin
+            playerClone.scaling = new Vector3(5, 5, 5); // Force large scale
+
             playerClone.setEnabled(true);
-            playerClone.getChildMeshes().forEach(child => child.setEnabled(true));
+            if (playerClone.getChildMeshes) {
+              playerClone.getChildMeshes().forEach(child => child.setEnabled(true));
+            }
+            console.log(`${playerClone.name} enabled: ${playerClone.isEnabled()}, visible: ${playerClone.isVisible}, parent: ${playerClone.parent?.name}`);
 
-            const offset = playerTileOffsets[i] || Vector3.Zero();
-            playerClone.position = new Vector3(
-              initialBoardSpacePos.x + offset.x,
-              initialBoardSpacePos.y + playerModelYOffset, // Adjust Y based on model height/origin
-              initialBoardSpacePos.z + offset.z
-            );
-            playerClone.scaling = new Vector3(playerModelScale, playerModelScale, playerModelScale);
-            // playerClone.rotation.y = Math.PI; // Example rotation
-
-            newPlayerMeshes.push(playerClone);
+            tempPlayerMeshes.push(playerClone);
           } else {
-            console.warn(`Failed to clone model for player ${i}`);
+            console.warn(`Failed to clone model for player ${i}: ${originalModel.name}`);
           }
         }
       }
-      setPlayerMeshes(newPlayerMeshes);
+      setPlayerMeshes(tempPlayerMeshes);
     }
-  }, [scene, loadedAnimalModels]); // Dependency: scene and the loaded models
+  }, [scene, loadedAnimalModels]);
 
   // Effect for updating player model positions based on playerSpaceIndices prop
   useEffect(() => {
+    console.log("Current playerMeshes for movement:", playerMeshes.map(m=>m.name));
     if (scene && playerMeshes.length > 0 && playerSpaceIndices) {
       playerSpaceIndices.forEach((spaceIdx, playerIdx) => {
         if (playerIdx < playerMeshes.length) {
@@ -110,37 +111,27 @@ const GameBoard = (props) => { // Accept props
   // Load animal models
   useEffect(() => {
     if (scene) {
-      // Corrected path: rootURL is "/", filename includes "models/" if it's in public/models
-      // However, if "public" is the web server root, and models is a dir inside, then:
-      // rootURL = "/models/", filename = "quirky_series_-_free_animals_pack.glb" - This was correct.
-      // If quirky_series_-_free_animals_pack.glb is directly in public, then:
-      // rootURL = "/", filename = "quirky_series_-_free_animals_pack.glb"
-      // The prompt asks for rootURL = "/" and filename = "quirky_series_-_free_animals_pack.glb".
-      // This implies the .glb file is expected to be in the root of the `public` folder.
-      // Let's assume the previous step of creating `public/models` means the file is in `public/models/`
-      // and the existing path was mostly correct, but the prompt is specific about rootURL.
-      // If the file is in `public/models/quirky...glb`, then rootUrl should be `/` and filename `models/quirky...glb`
-      // Or rootUrl `/models/` and filename `quirky...glb`.
-      // Let's follow the prompt's specific request for rootURL and filename literally, assuming the file is moved or the path structure is different than my previous assumption.
+      console.log("Attempting to load animal models...");
       SceneLoader.ImportMeshAsync(null, "/", "quirky_series_-_free_animals_pack.glb", scene)
         .then((result) => {
-          console.log("All loaded mesh names:", result.meshes.map(m => m.name));
+          console.log("Raw loaded meshes result:", result); // Log entire structure
+          console.log("All mesh names from pack:", result.meshes.map(m => m.name)); // Log before filtering
 
           const filteredMeshes = result.meshes.filter(mesh => !mesh.name.startsWith("__"));
-          const selectedMeshes = filteredMeshes.slice(0, 4);
+          const selectedModels = filteredMeshes.slice(0, 4); // Renamed to selectedModels for clarity
 
-          console.log("Selected animal model names for players:", selectedMeshes.map(m => m.name));
-          setLoadedAnimalModels(selectedMeshes);
+          console.log("Selected animal model names for state:", selectedModels.map(m => m.name));
+          setLoadedAnimalModels(selectedModels);
 
           result.meshes.forEach(mesh => {
-            mesh.setEnabled(false); // Keep all loaded meshes (including selected) hidden for now
+            mesh.setEnabled(false);
           });
         })
         .catch((error) => {
           console.error("Error loading animal models:", error);
         });
     }
-  }, [scene]); // Runs once when scene is available
+  }, [scene]);
 
   return (
     <>
