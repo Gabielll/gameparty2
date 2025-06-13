@@ -53,6 +53,9 @@ const GameBoard = (props) => { // Accept props
       for (let i = 0; i < Math.min(loadedAnimalModels.length, 4); i++) {
         const originalModel = loadedAnimalModels[i];
         if (originalModel) {
+          console.log(`Original model ${originalModel.name} - enabled: ${originalModel.isEnabled()}, visible: ${originalModel.isVisible}`);
+          originalModel.setEnabled(true); // Temporary Test: Enable original model
+
           const existingPlayerMesh = scene.getMeshByName("player" + i);
           if (existingPlayerMesh) {
             existingPlayerMesh.dispose();
@@ -63,14 +66,25 @@ const GameBoard = (props) => { // Accept props
             console.log("Attempting to make visible and position clone:", playerClone.name);
 
             // Temporary Debugging for Visibility:
-            playerClone.position = new Vector3(i * 2, 1, 0); // Spread them out on X near origin
-            playerClone.scaling = new Vector3(5, 5, 5); // Force large scale
+            playerClone.position = new Vector3(i * 2, 1, 0);
+            playerClone.scaling = new Vector3(5, 5, 5);
 
             playerClone.setEnabled(true);
             if (playerClone.getChildMeshes) {
               playerClone.getChildMeshes().forEach(child => child.setEnabled(true));
             }
-            console.log(`${playerClone.name} enabled: ${playerClone.isEnabled()}, visible: ${playerClone.isVisible}, parent: ${playerClone.parent?.name}`);
+
+            // Enable all parents of the clone
+            let parent = playerClone.parent;
+            while (parent) {
+                if (parent.setEnabled) {
+                    parent.setEnabled(true);
+                    console.log(`Ensured parent ${parent.name} of ${playerClone.name} is enabled.`);
+                }
+                parent = parent.parent;
+            }
+
+            console.log(`Clone ${playerClone.name} - enabled: ${playerClone.isEnabled()}, visible: ${playerClone.isVisible}, isActuallyVisible: ${playerClone.isActuallyVisible}, parent: ${playerClone.parent?.name}, parent enabled: ${playerClone.parent?.isEnabled ? playerClone.parent.isEnabled() : 'N/A'}`);
 
             tempPlayerMeshes.push(playerClone);
           } else {
