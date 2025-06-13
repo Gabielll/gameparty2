@@ -53,8 +53,8 @@ const GameBoard = (props) => { // Accept props
       for (let i = 0; i < Math.min(loadedAnimalModels.length, 4); i++) {
         const originalModel = loadedAnimalModels[i];
         if (originalModel) {
-          console.log(`Original model ${originalModel.name} - enabled: ${originalModel.isEnabled()}, visible: ${originalModel.isVisible}`);
-          originalModel.setEnabled(true); // Temporary Test: Enable original model
+          // console.log(`Original model ${originalModel.name} - enabled: ${originalModel.isEnabled()}, visible: ${originalModel.isVisible}`);
+          // originalModel.setEnabled(true); // REMOVED: Temporary Test: Enable original model
 
           const existingPlayerMesh = scene.getMeshByName("player" + i);
           if (existingPlayerMesh) {
@@ -65,16 +65,22 @@ const GameBoard = (props) => { // Accept props
           if (playerClone) {
             console.log("Attempting to make visible and position clone:", playerClone.name);
 
-            // Temporary Debugging for Visibility:
-            playerClone.position = new Vector3(i * 2, 1, 0);
-            playerClone.scaling = new Vector3(5, 5, 5);
+            // Restore game-logic positioning and scaling
+            const offset = playerTileOffsets[i] || Vector3.Zero();
+            playerClone.position = new Vector3(
+              initialBoardSpacePos.x + offset.x,
+              initialBoardSpacePos.y + playerModelYOffset,
+              initialBoardSpacePos.z + offset.z
+            );
+            playerClone.scaling = new Vector3(playerModelScale, playerModelScale, playerModelScale);
+            // playerClone.rotation.y = Math.PI; // Example rotation, if needed later
 
             playerClone.setEnabled(true);
             if (playerClone.getChildMeshes) {
               playerClone.getChildMeshes().forEach(child => child.setEnabled(true));
             }
 
-            // Enable all parents of the clone
+            // Enable all parents of the clone (keeping this as it's generally useful)
             let parent = playerClone.parent;
             while (parent) {
                 if (parent.setEnabled) {
@@ -125,16 +131,16 @@ const GameBoard = (props) => { // Accept props
   // Load animal models
   useEffect(() => {
     if (scene) {
-      console.log("Attempting to load animal models...");
+      // console.log("Attempting to load animal models..."); // Optional: Remove or keep
       SceneLoader.ImportMeshAsync(null, "/", "quirky_series_-_free_animals_pack.glb", scene)
         .then((result) => {
-          console.log("Raw loaded meshes result:", result); // Log entire structure
-          console.log("All mesh names from pack:", result.meshes.map(m => m.name)); // Log before filtering
+          // console.log("Raw loaded meshes result:", result); // Optional: Remove or keep
+          // console.log("All mesh names from pack:", result.meshes.map(m => m.name)); // Optional: Remove or keep
 
           const filteredMeshes = result.meshes.filter(mesh => !mesh.name.startsWith("__"));
-          const selectedModels = filteredMeshes.slice(0, 4); // Renamed to selectedModels for clarity
+          const selectedModels = filteredMeshes.slice(0, 4);
 
-          console.log("Selected animal model names for state:", selectedModels.map(m => m.name));
+          console.log("Selected animal model names for state:", selectedModels.map(m => m.name)); // Keep this
           setLoadedAnimalModels(selectedModels);
 
           result.meshes.forEach(mesh => {
@@ -142,7 +148,7 @@ const GameBoard = (props) => { // Accept props
           });
         })
         .catch((error) => {
-          console.error("Error loading animal models:", error);
+          console.error("Error loading animal models:", error); // Keep this
         });
     }
   }, [scene]);
