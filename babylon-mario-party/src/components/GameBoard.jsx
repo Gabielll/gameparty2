@@ -53,8 +53,8 @@ const GameBoard = (props) => { // Accept props
       for (let i = 0; i < Math.min(loadedAnimalModels.length, 4); i++) {
         const originalModel = loadedAnimalModels[i];
         if (originalModel) {
-          // console.log(`Original model ${originalModel.name} - enabled: ${originalModel.isEnabled()}, visible: ${originalModel.isVisible}`);
-          // originalModel.setEnabled(true); // REMOVED: Temporary Test: Enable original model
+          originalModel.setEnabled(true); // Enable before cloning
+          console.log(`Temporarily enabled originalModel: ${originalModel.name} before cloning.`);
 
           const existingPlayerMesh = scene.getMeshByName("player" + i);
           if (existingPlayerMesh) {
@@ -62,6 +62,10 @@ const GameBoard = (props) => { // Accept props
           }
 
           const playerClone = originalModel.clone("player" + i, null, true);
+
+          originalModel.setEnabled(false); // Disable after cloning
+          console.log(`Disabled originalModel: ${originalModel.name} after cloning.`);
+
           if (playerClone) {
             console.log("Attempting to make visible and position clone:", playerClone.name);
 
@@ -90,7 +94,7 @@ const GameBoard = (props) => { // Accept props
                 parent = parent.parent;
             }
 
-            console.log(`Clone ${playerClone.name} - enabled: ${playerClone.isEnabled()}, visible: ${playerClone.isVisible}, isActuallyVisible: ${playerClone.isActuallyVisible}, parent: ${playerClone.parent?.name}, parent enabled: ${playerClone.parent?.isEnabled ? playerClone.parent.isEnabled() : 'N/A'}`);
+            console.log(`Clone ${playerClone.name} - enabled: ${playerClone.isEnabled()}, visible: ${playerClone.isVisible}, parent: ${playerClone.parent?.name}, parent enabled: ${playerClone.parent?.isEnabled ? playerClone.parent.isEnabled() : 'N/A'}`);
 
             tempPlayerMeshes.push(playerClone);
           } else {
